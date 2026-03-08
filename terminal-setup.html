@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>macOS Terminal Beautifier</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --card: #16161f;
+    --border: #2a2a3a;
+    --green: #00ff88;
+    --cyan: #00d4ff;
+    --magenta: #ff00aa;
+    --yellow: #ffdd00;
+    --orange: #ff6b35;
+    --purple: #8b5cf6;
+    --text: #e8e8f0;
+    --muted: #666680;
+    --glow-g: rgba(0,255,136,0.15);
+    --glow-c: rgba(0,212,255,0.15);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,255,136,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,136,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 60px;
+    animation: fadeDown 0.8s ease both;
+  }
+
+  .header .eyebrow {
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--green);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    opacity: 0.8;
+  }
+
+  .header h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(32px, 6vw, 56px);
+    font-weight: 800;
+    line-height: 1.05;
+    background: linear-gradient(135deg, var(--green) 0%, var(--cyan) 50%, var(--purple) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 12px;
+  }
+
+  .header p {
+    color: var(--muted);
+    font-size: 13px;
+    letter-spacing: 1px;
+  }
+
+  /* Terminal preview */
+  .terminal-window {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 48px;
+    box-shadow: 0 0 60px rgba(0,255,136,0.08), 0 20px 60px rgba(0,0,0,0.5);
+    animation: fadeUp 0.8s 0.2s ease both;
+  }
+
+  .terminal-titlebar {
+    background: #1e1e28;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .dot { width: 12px; height: 12px; border-radius: 50%; }
+  .dot.red { background: #ff5f57; }
+  .dot.yellow { background: #ffbd2e; }
+  .dot.green { background: #28ca42; }
+
+  .terminal-title {
+    margin-left: auto;
+    margin-right: auto;
+    font-size: 11px;
+    color: var(--muted);
+    transform: translateX(-20px);
+  }
+
+  .terminal-body {
+    padding: 20px 24px;
+    font-size: 13px;
+    line-height: 2;
+    min-height: 200px;
+  }
+
+  .t-prompt { color: var(--green); }
+  .t-path { color: var(--cyan); }
+  .t-git { color: var(--magenta); }
+  .t-arrow { color: var(--yellow); }
+  .t-cmd { color: var(--text); }
+  .t-out { color: var(--muted); }
+  .t-success { color: var(--green); }
+  .t-file { color: var(--cyan); }
+  .t-dir { color: var(--purple); font-weight: 600; }
+  .t-exec { color: var(--orange); font-weight: 600; }
+
+  .cursor {
+    display: inline-block;
+    width: 8px;
+    height: 14px;
+    background: var(--green);
+    vertical-align: middle;
+    animation: blink 1.2s step-end infinite;
+    border-radius: 1px;
+  }
+
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  /* Steps */
+  .steps-label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 24px;
+    animation: fadeUp 0.6s 0.4s ease both;
+    opacity: 0;
+    animation-fill-mode: both;
+  }
+
+  .step {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 20px;
+    overflow: hidden;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    cursor: pointer;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .step:hover {
+    border-color: rgba(0,255,136,0.3);
+    box-shadow: 0 0 30px rgba(0,255,136,0.06);
+  }
+
+  .step.open {
+    border-color: rgba(0,255,136,0.4);
+    box-shadow: 0 0 40px rgba(0,255,136,0.1);
+  }
+
+  .step-header {
+    display: flex;
+    align-items: center;
+    padding: 18px 24px;
+    gap: 16px;
+  }
+
+  .step-num {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .step-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    flex: 1;
+  }
+
+  .step-tag {
+    font-size: 10px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .chevron {
+    width: 20px;
+    height: 20px;
+    color: var(--muted);
+    transition: transform 0.3s;
+    flex-shrink: 0;
+  }
+
+  .step.open .chevron { transform: rotate(180deg); }
+
+  .step-content {
+    display: none;
+    padding: 0 24px 24px;
+    border-top: 1px solid var(--border);
+    margin-top: 0;
+  }
+
+  .step.open .step-content { display: block; }
+
+  .step-desc {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.8;
+    padding: 16px 0 12px;
+  }
+
+  /* Code blocks */
+  .code-block {
+    background: #0d0d14;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 10px 0;
+  }
+
+  .code-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 14px;
+    background: rgba(255,255,255,0.03);
+    border-bottom: 1px solid var(--border);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .copy-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .copy-btn:hover {
+    border-color: var(--green);
+    color: var(--green);
+  }
+
+  .copy-btn.copied {
+    border-color: var(--green);
+    color: var(--green);
+  }
+
+  .code-body {
+    padding: 14px 16px;
+    font-size: 12px;
+    line-height: 1.8;
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  .kw { color: var(--magenta); }
+  .str { color: var(--yellow); }
+  .co { color: var(--orange); }
+  .fn { color: var(--cyan); }
+  .cm { color: #444460; font-style: italic; }
+  .hl { color: var(--green); }
+  .va { color: var(--purple); }
+
+  /* Color palette pills */
+  .palette {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0;
+  }
+
+  .swatch {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.1);
+    cursor: pointer;
+    transition: transform 0.2s;
+    position: relative;
+  }
+
+  .swatch:hover { transform: scale(1.2); }
+  .swatch::after {
+    content: attr(title);
+    position: absolute;
+    bottom: -24px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 9px;
+    color: var(--muted);
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .swatch:hover::after { opacity: 1; }
+
+  /* Info box */
+  .info-box {
+    background: rgba(0,255,136,0.05);
+    border: 1px solid rgba(0,255,136,0.2);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 11px;
+    color: var(--green);
+    line-height: 1.7;
+    margin: 12px 0;
+  }
+
+  .warn-box {
+    background: rgba(255,221,0,0.05);
+    border: 1px solid rgba(255,221,0,0.2);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 11px;
+    color: var(--yellow);
+    line-height: 1.7;
+    margin: 12px 0;
+  }
+
+  /* Result preview */
+  .mini-term {
+    background: #0d0d14;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 12px;
+    line-height: 1.9;
+    margin: 10px 0;
+  }
+
+  /* Animations */
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Step colors */
+  .s1 .step-num { background: rgba(0,255,136,0.1); color: var(--green); }
+  .s1 .step-tag { background: rgba(0,255,136,0.1); color: var(--green); }
+  .s2 .step-num { background: rgba(0,212,255,0.1); color: var(--cyan); }
+  .s2 .step-tag { background: rgba(0,212,255,0.1); color: var(--cyan); }
+  .s3 .step-num { background: rgba(255,0,170,0.1); color: var(--magenta); }
+  .s3 .step-tag { background: rgba(255,0,170,0.1); color: var(--magenta); }
+  .s4 .step-num { background: rgba(255,221,0,0.1); color: var(--yellow); }
+  .s4 .step-tag { background: rgba(255,221,0,0.1); color: var(--yellow); }
+  .s5 .step-num { background: rgba(139,92,246,0.1); color: var(--purple); }
+  .s5 .step-tag { background: rgba(139,92,246,0.1); color: var(--purple); }
+
+  .step:nth-child(1) { animation-delay: 0.5s; }
+  .step:nth-child(2) { animation-delay: 0.6s; }
+  .step:nth-child(3) { animation-delay: 0.7s; }
+  .step:nth-child(4) { animation-delay: 0.8s; }
+  .step:nth-child(5) { animation-delay: 0.9s; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header class="header">
+    <div class="eyebrow">✦ macOS Setup Guide ✦</div>
+    <h1>Terminal,<br>Beautified.</h1>
+    <p>From bland to stunning — step by step</p>
+  </header>
+
+  <!-- Live preview terminal -->
+  <div class="terminal-window">
+    <div class="terminal-titlebar">
+      <div class="dot red"></div>
+      <div class="dot yellow"></div>
+      <div class="dot green"></div>
+      <span class="terminal-title">zsh — after setup</span>
+    </div>
+    <div class="terminal-body">
+      <div><span class="t-prompt">╭─</span> <span class="t-path">~/projects/my-app</span> <span class="t-git"> main</span> <span style="color:var(--orange)">✎ 2</span></div>
+      <div><span class="t-prompt">╰─</span><span class="t-arrow">❯</span> <span class="t-cmd">ls -la</span></div>
+      <div><span class="t-dir">drwxr-xr-x  src/</span>  <span class="t-dir">components/</span>  <span class="t-dir">public/</span></div>
+      <div><span class="t-file">-rw-r--r--  package.json</span>  <span class="t-file">README.md</span>  <span class="t-exec">start.sh</span></div>
+      <div style="margin-top:8px"><span class="t-prompt">╭─</span> <span class="t-path">~/projects/my-app</span> <span class="t-git"> main</span></div>
+      <div><span class="t-prompt">╰─</span><span class="t-arrow">❯</span> <span class="t-cmd">git status</span></div>
+      <div><span class="t-success">✔</span> <span style="color:var(--muted)">On branch main, 2 files modified</span></div>
+      <div style="margin-top:8px"><span class="t-prompt">╭─</span> <span class="t-path">~/projects/my-app</span> <span class="t-git"> main</span></div>
+      <div><span class="t-prompt">╰─</span><span class="t-arrow">❯</span> <span class="cursor"></span></div>
+    </div>
+  </div>
+
+  <div class="steps-label">// Setup Steps — click each to expand</div>
+
+  <!-- Step 1 -->
+  <div class="step s1" onclick="toggle(this)">
+    <div class="step-header">
+      <div class="step-num">01</div>
+      <div class="step-title">Install iTerm2 — a better terminal</div>
+      <div class="step-tag">App</div>
+      <svg class="chevron" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+      </svg>
+    </div>
+    <div class="step-content">
+      <div class="step-desc">Replace the default Terminal.app with iTerm2. It supports true 24-bit colour, split panes, image display, and far more customisation.</div>
+      <div class="code-block">
+        <div class="code-header"><span>brew install</span><button class="copy-btn" onclick="copy(this,'brew install --cask iterm2')">Copy</button></div>
+        <div class="code-body"><span class="hl">brew install --cask iterm2</span></div>
+      </div>
+      <div class="info-box">💡 Don't have Homebrew? First run:<br><span style="opacity:0.7">/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"</span></div>
+      <div class="step-desc" style="padding-top:8px">Then open iTerm2 → Preferences → Profiles → Colors tab to pick a colour scheme.</div>
+    </div>
+  </div>
+
+  <!-- Step 2 -->
+  <div class="step s2" onclick="toggle(this)">
+    <div class="step-header">
+      <div class="step-num">02</div>
+      <div class="step-title">Install Oh My Zsh + plugins</div>
+      <div class="step-tag">Shell</div>
+      <svg class="chevron" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+      </svg>
+    </div>
+    <div class="step-content">
+      <div class="step-desc">Oh My Zsh is a framework that manages Zsh config, themes, and plugins. It's the backbone of a beautiful shell.</div>
+      <div class="code-block">
+        <div class="code-header"><span>install oh-my-zsh</span><button class="copy-btn" onclick="copy(this,'sh -c &quot;$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)&quot;')">Copy</button></div>
+        <div class="code-body"><span class="hl">sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"</span></div>
+      </div>
+      <div class="step-desc">Then install these two essential plugins:</div>
+      <div class="code-block">
+        <div class="code-header"><span>plugins</span><button class="copy-btn" onclick="copy(this, pluginText)">Copy</button></div>
+        <div class="code-body"><span class="cm"># Syntax highlighting (colours your commands)</span>
+<span class="fn">git clone</span> https://github.com/zsh-users/zsh-syntax-highlighting \
+  ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
+
+<span class="cm"># Autosuggestions (grey text completions)</span>
+<span class="fn">git clone</span> https://github.com/zsh-users/zsh-autosuggestions \
+  ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions</div>
+      </div>
+      <div class="step-desc">Enable them in <span style="color:var(--cyan)">~/.zshrc</span>:</div>
+      <div class="code-block">
+        <div class="code-header"><span>~/.zshrc</span><button class="copy-btn" onclick="copy(this,'plugins=(git zsh-syntax-highlighting zsh-autosuggestions)')">Copy</button></div>
+        <div class="code-body"><span class="va">plugins</span>=(<span class="str">git zsh-syntax-highlighting zsh-autosuggestions</span>)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 3 -->
+  <div class="step s3" onclick="toggle(this)">
+    <div class="step-header">
+      <div class="step-num">03</div>
+      <div class="step-title">Install Powerlevel10k theme</div>
+      <div class="step-tag">Prompt</div>
+      <svg class="chevron" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+      </svg>
+    </div>
+    <div class="step-content">
+      <div class="step-desc">Powerlevel10k (p10k) is the most beautiful and fastest Zsh prompt theme — it shows git status, execution time, errors, virtualenvs, and more.</div>
+      <div class="code-block">
+        <div class="code-header"><span>install p10k</span><button class="copy-btn" onclick="copy(this, p10kText)">Copy</button></div>
+        <div class="code-body"><span class="fn">git clone</span> --depth=1 https://github.com/romkatv/powerlevel10k.git \
+  ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k</div>
+      </div>
+      <div class="step-desc">Set it as your theme in <span style="color:var(--cyan)">~/.zshrc</span>:</div>
+      <div class="code-block">
+        <div class="code-header"><span>~/.zshrc</span><button class="copy-btn" onclick="copy(this,'ZSH_THEME=&quot;powerlevel10k/powerlevel10k&quot;')">Copy</button></div>
+        <div class="code-body"><span class="va">ZSH_THEME</span>=<span class="str">"powerlevel10k/powerlevel10k"</span></div>
+      </div>
+      <div class="info-box">✦ After saving, restart your terminal and run <strong>p10k configure</strong> to go through an interactive wizard that lets you pick icons, colours, and layout — it's incredibly well designed.</div>
+    </div>
+  </div>
+
+  <!-- Step 4 -->
+  <div class="step s4" onclick="toggle(this)">
+    <div class="step-header">
+      <div class="step-num">04</div>
+      <div class="step-title">Install a Nerd Font</div>
+      <div class="step-tag">Fonts</div>
+      <svg class="chevron" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+      </svg>
+    </div>
+    <div class="step-content">
+      <div class="step-desc">Nerd Fonts patch developer fonts with thousands of icons — they're required for Powerlevel10k's arrows, git icons, and status symbols to render correctly.</div>
+      <div class="code-block">
+        <div class="code-header"><span>install font</span><button class="copy-btn" onclick="copy(this, fontText)">Copy</button></div>
+        <div class="code-body"><span class="cm"># MesloLGS NF — recommended for p10k</span>
+<span class="fn">brew tap</span> homebrew/cask-fonts
+<span class="fn">brew install</span> --cask font-meslo-lg-nerd-font</div>
+      </div>
+      <div class="warn-box">⚠ After installing, go to iTerm2 → Preferences → Profiles → Text → Font and set it to <strong>MesloLGS NF</strong>. Without this, icons will show as broken boxes.</div>
+    </div>
+  </div>
+
+  <!-- Step 5 -->
+  <div class="step s5" onclick="toggle(this)">
+    <div class="step-header">
+      <div class="step-num">05</div>
+      <div class="step-title">Apply a colour scheme</div>
+      <div class="step-tag">Colours</div>
+      <svg class="chevron" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+      </svg>
+    </div>
+    <div class="step-content">
+      <div class="step-desc">Popular colour schemes to download from <span style="color:var(--cyan)">iterm2colorschemes.com</span> and import via iTerm2 → Preferences → Profiles → Colors → Import:</div>
+      <div class="palette" style="margin: 16px 0 24px; gap: 12px; align-items: center;">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+          <div style="display:flex;gap:3px">
+            <div class="swatch" style="background:#1a1b26"></div>
+            <div class="swatch" style="background:#7aa2f7"></div>
+            <div class="swatch" style="background:#bb9af7"></div>
+            <div class="swatch" style="background:#9ece6a"></div>
+          </div>
+          <span style="font-size:10px;color:var(--muted)">Tokyo Night</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+          <div style="display:flex;gap:3px">
+            <div class="swatch" style="background:#282a36"></div>
+            <div class="swatch" style="background:#ff79c6"></div>
+            <div class="swatch" style="background:#50fa7b"></div>
+            <div class="swatch" style="background:#f1fa8c"></div>
+          </div>
+          <span style="font-size:10px;color:var(--muted)">Dracula</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+          <div style="display:flex;gap:3px">
+            <div class="swatch" style="background:#0d1117"></div>
+            <div class="swatch" style="background:#58a6ff"></div>
+            <div class="swatch" style="background:#3fb950"></div>
+            <div class="swatch" style="background:#f78166"></div>
+          </div>
+          <span style="font-size:10px;color:var(--muted)">GitHub Dark</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+          <div style="display:flex;gap:3px">
+            <div class="swatch" style="background:#1e1e2e"></div>
+            <div class="swatch" style="background:#cba6f7"></div>
+            <div class="swatch" style="background:#a6e3a1"></div>
+            <div class="swatch" style="background:#fab387"></div>
+          </div>
+          <span style="font-size:10px;color:var(--muted)">Catppuccin</span>
+        </div>
+      </div>
+      <div class="step-desc" style="padding-top:0">Also add <span style="color:var(--green)">lsd</span> (a colourful <code style="color:var(--cyan)">ls</code> replacement) and <span style="color:var(--green)">bat</span> (colourful <code style="color:var(--cyan)">cat</code>):</div>
+      <div class="code-block">
+        <div class="code-header"><span>colourful tools</span><button class="copy-btn" onclick="copy(this,'brew install lsd bat\n# Add to ~/.zshrc:\nalias ls=&quot;lsd&quot;\nalias cat=&quot;bat&quot;')">Copy</button></div>
+        <div class="code-body"><span class="fn">brew install</span> lsd bat
+
+<span class="cm"># Add to ~/.zshrc</span>
+<span class="kw">alias</span> <span class="va">ls</span>=<span class="str">"lsd"</span>
+<span class="kw">alias</span> <span class="va">cat</span>=<span class="str">"bat"</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="info-box" style="margin-top:32px; font-size:12px; line-height:2;">
+    ✦ After all steps: run <span style="color:var(--text)">source ~/.zshrc</span> to reload, then <span style="color:var(--text)">p10k configure</span> to fine-tune your prompt.<br>
+    ✦ Visit <span style="color:var(--cyan)">iterm2colorschemes.com</span> for 250+ colour schemes to browse and download.
+  </div>
+
+</div>
+
+<script>
+  function toggle(el) {
+    el.classList.toggle('open');
+  }
+
+  const pluginText = `git clone https://github.com/zsh-users/zsh-syntax-highlighting \\\n  \${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting\ngit clone https://github.com/zsh-users/zsh-autosuggestions \\\n  \${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions`;
+
+  const p10kText = `git clone --depth=1 https://github.com/romkatv/powerlevel10k.git \\\n  \${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k`;
+
+  const fontText = `brew tap homebrew/cask-fonts\nbrew install --cask font-meslo-lg-nerd-font`;
+
+  function copy(btn, text) {
+    const resolvedText = typeof text === 'string' ? text : text;
+    navigator.clipboard.writeText(resolvedText).then(() => {
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = 'Copy';
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+    event.stopPropagation();
+  }
+
+  // Open first step by default
+  document.querySelector('.step').classList.add('open');
+</script>
+</body>
+</html>
