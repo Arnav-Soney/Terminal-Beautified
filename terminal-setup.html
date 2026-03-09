@@ -213,15 +213,32 @@
 </div>
 
 <script>
+  // Backend-driven configuration
+  let pluginText = '';
+  let p10kText = '';
+  let fontText = '';
+
+  // Fetch config from backend on page load
+  async function loadConfig() {
+    try {
+      const response = await fetch('/api/config');
+      const config = await response.json();
+      
+      pluginText = config.pluginText;
+      p10kText = config.p10kText;
+      fontText = config.fontText;
+    } catch (error) {
+      console.error('Failed to load config from backend, using fallback:', error);
+      // Fallback values if backend is not available
+      pluginText = `git clone https://github.com/zsh-users/zsh-syntax-highlighting \\\n  \${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting\ngit clone https://github.com/zsh-users/zsh-autosuggestions \\\n  \${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions`;
+      p10kText = `git clone --depth=1 https://github.com/romkatv/powerlevel10k.git \\\n  \${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k`;
+      fontText = `brew tap homebrew/cask-fonts\nbrew install --cask font-meslo-lg-nerd-font`;
+    }
+  }
+
   function toggle(el) {
     el.classList.toggle('open');
   }
-
-  const pluginText = `git clone https://github.com/zsh-users/zsh-syntax-highlighting \\\n  \${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting\ngit clone https://github.com/zsh-users/zsh-autosuggestions \\\n  \${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions`;
-
-  const p10kText = `git clone --depth=1 https://github.com/romkatv/powerlevel10k.git \\\n  \${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k`;
-
-  const fontText = `brew tap homebrew/cask-fonts\nbrew install --cask font-meslo-lg-nerd-font`;
 
   function copy(btn, text) {
     const resolvedText = typeof text === 'string' ? text : text;
@@ -236,8 +253,10 @@
     event.stopPropagation();
   }
 
-  // Open first step by default
-  document.querySelector('.step').classList.add('open');
+  // Load config and open first step on page load
+  loadConfig().then(() => {
+    document.querySelector('.step').classList.add('open');
+  });
 </script>
 </body>
 </html>
