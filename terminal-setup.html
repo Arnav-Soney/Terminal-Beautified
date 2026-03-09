@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>macOS Terminal Beautifier</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+
+  <header class="header">
+    <div class="eyebrow">✦ macOS Setup Guide ✦</div>
+    <h1>Terminal,<br>Beautified.</h1>
+    <p>From bland to stunning — step by step</p>
+  </header>
+
+  <!-- Live preview terminal -->
+  <div class="terminal-window">
+    <div class="terminal-titlebar">
+      <div class="dot red"></div>
+      <div class="dot yellow"></div>
+      <div class="dot green"></div>
+      <span class="terminal-title">zsh — after setup</span>
+    </div>
+    <div class="terminal-body">
+      <div><span class="t-prompt">╭─</span> <span class="t-path">~/projects/my-app</span> <span class="t-git"> main</span> <span style="color:var(--orange)">✎ 2</span></div>
+      <div><span class="t-prompt">╰─</span><span class="t-arrow">❯</span> <span class="t-cmd">ls -la</span></div>
+      <div><span class="t-dir">drwxr-xr-x  src/</span>  <span class="t-dir">components/</span>  <span class="t-dir">public/</span></div>
+      <div><span class="t-file">-rw-r--r--  package.json</span>  <span class="t-file">README.md</span>  <span class="t-exec">start.sh</span></div>
+      <div style="margin-top:8px"><span class="t-prompt">╭─</span> <span class="t-path">~/projects/my-app</span> <span class="t-git"> main</span></div>
+      <div><span class="t-prompt">╰─</span><span class="t-arrow">❯</span> <span class="t-cmd">git status</span></div>
+      <div><span class="t-success">✔</span> <span style="color:var(--muted)">On branch main, 2 files modified</span></div>
+      <div style="margin-top:8px"><span class="t-prompt">╭─</span> <span class="t-path">~/projects/my-app</span> <span class="t-git"> main</span></div>
+      <div><span class="t-prompt">╰─</span><span class="t-arrow">❯</span> <span class="cursor"></span></div>
+    </div>
+  </div>
+
+  <div class="steps-label">// Setup Steps — click each to expand</div>
+
+  <!-- Step 1 -->
+  <div class="step s1" onclick="toggle(this)">
+    <div class="step-header">
+      <div class="step-num">01</div>
+      <div class="step-title">Install iTerm2 — a better terminal</div>
+      <div class="step-tag">App</div>
+      <svg class="chevron" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+      </svg>
+    </div>
+    <div class="step-content">
+      <div class="step-desc">Replace the default Terminal.app with iTerm2. It supports true 24-bit colour, split panes, image display, and far more customisation.</div>
+      <div class="code-block">
+        <div class="code-header"><span>brew install</span><button class="copy-btn" onclick="copy(this,'brew install --cask iterm2')">Copy</button></div>
+        <div class="code-body"><span class="hl">brew install --cask iterm2</span></div>
+      </div>
+      <div class="info-box">💡 Don't have Homebrew? First run:<br><span style="opacity:0.7">/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"</span></div>
+      <div class="step-desc" style="padding-top:8px">Then open iTerm2 → Preferences → Profiles → Colors tab to pick a colour scheme.</div>
+    </div>
+  </div>
+
+  <!-- Step 2 -->
+  <div class="step s2" onclick="toggle(this)">
+    <div class="step-header">
+      <div class="step-num">02</div>
+      <div class="step-title">Install Oh My Zsh + plugins</div>
+      <div class="step-tag">Shell</div>
+      <svg class="chevron" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+      </svg>
+    </div>
+    <div class="step-content">
+      <div class="step-desc">Oh My Zsh is a framework that manages Zsh config, themes, and plugins. It's the backbone of a beautiful shell.</div>
+      <div class="code-block">
+        <div class="code-header"><span>install oh-my-zsh</span><button class="copy-btn" onclick="copy(this,'sh -c &quot;$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)&quot;')">Copy</button></div>
+        <div class="code-body"><span class="hl">sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"</span></div>
+      </div>
+      <div class="step-desc">Then install these two essential plugins:</div>
+      <div class="code-block">
+        <div class="code-header"><span>plugins</span><button class="copy-btn" onclick="copy(this, pluginText)">Copy</button></div>
+        <div class="code-body"><span class="cm"># Syntax highlighting (colours your commands)</span>
+<span class="fn">git clone</span> https://github.com/zsh-users/zsh-syntax-highlighting \
+  ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
+
+<span class="cm"># Autosuggestions (grey text completions)</span>
+<span class="fn">git clone</span> https://github.com/zsh-users/zsh-autosuggestions \
+  ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions</div>
+      </div>
+      <div class="step-desc">Enable them in <span style="color:var(--cyan)">~/.zshrc</span>:</div>
+      <div class="code-block">
+        <div class="code-header"><span>~/.zshrc</span><button class="copy-btn" onclick="copy(this,'plugins=(git zsh-syntax-highlighting zsh-autosuggestions)')">Copy</button></div>
+        <div class="code-body"><span class="va">plugins</span>=(<span class="str">git zsh-syntax-highlighting zsh-autosuggestions</span>)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 3 -->
+  <div class="step s3" onclick="toggle(this)">
+    <div class="step-header">
+      <div class="step-num">03</div>
+      <div class="step-title">Install Powerlevel10k theme</div>
+      <div class="step-tag">Prompt</div>
+      <svg class="chevron" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+      </svg>
+    </div>
+    <div class="step-content">
+      <div class="step-desc">Powerlevel10k (p10k) is the most beautiful and fastest Zsh prompt theme — it shows git status, execution time, errors, virtualenvs, and more.</div>
+      <div class="code-block">
+        <div class="code-header"><span>install p10k</span><button class="copy-btn" onclick="copy(this, p10kText)">Copy</button></div>
+        <div class="code-body"><span class="fn">git clone</span> --depth=1 https://github.com/romkatv/powerlevel10k.git \
+  ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k</div>
+      </div>
+      <div class="step-desc">Set it as your theme in <span style="color:var(--cyan)">~/.zshrc</span>:</div>
+      <div class="code-block">
+        <div class="code-header"><span>~/.zshrc</span><button class="copy-btn" onclick="copy(this,'ZSH_THEME=&quot;powerlevel10k/powerlevel10k&quot;')">Copy</button></div>
+        <div class="code-body"><span class="va">ZSH_THEME</span>=<span class="str">"powerlevel10k/powerlevel10k"</span></div>
+      </div>
+      <div class="info-box">✦ After saving, restart your terminal and run <strong>p10k configure</strong> to go through an interactive wizard that lets you pick icons, colours, and layout — it's incredibly well designed.</div>
+    </div>
+  </div>
+
+  <!-- Step 4 -->
+  <div class="step s4" onclick="toggle(this)">
+    <div class="step-header">
+      <div class="step-num">04</div>
+      <div class="step-title">Install a Nerd Font</div>
+      <div class="step-tag">Fonts</div>
+      <svg class="chevron" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+      </svg>
+    </div>
+    <div class="step-content">
+      <div class="step-desc">Nerd Fonts patch developer fonts with thousands of icons — they're required for Powerlevel10k's arrows, git icons, and status symbols to render correctly.</div>
+      <div class="code-block">
+        <div class="code-header"><span>install font</span><button class="copy-btn" onclick="copy(this, fontText)">Copy</button></div>
+        <div class="code-body"><span class="cm"># MesloLGS NF — recommended for p10k</span>
+<span class="fn">brew tap</span> homebrew/cask-fonts
+<span class="fn">brew install</span> --cask font-meslo-lg-nerd-font</div>
+      </div>
+      <div class="warn-box">⚠ After installing, go to iTerm2 → Preferences → Profiles → Text → Font and set it to <strong>MesloLGS NF</strong>. Without this, icons will show as broken boxes.</div>
+    </div>
+  </div>
+
+  <!-- Step 5 -->
+  <div class="step s5" onclick="toggle(this)">
+    <div class="step-header">
+      <div class="step-num">05</div>
+      <div class="step-title">Apply a colour scheme</div>
+      <div class="step-tag">Colours</div>
+      <svg class="chevron" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+      </svg>
+    </div>
+    <div class="step-content">
+      <div class="step-desc">Popular colour schemes to download from <span style="color:var(--cyan)">iterm2colorschemes.com</span> and import via iTerm2 → Preferences → Profiles → Colors → Import:</div>
+      <div class="palette" style="margin: 16px 0 24px; gap: 12px; align-items: center;">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+          <div style="display:flex;gap:3px">
+            <div class="swatch" style="background:#1a1b26"></div>
+            <div class="swatch" style="background:#7aa2f7"></div>
+            <div class="swatch" style="background:#bb9af7"></div>
+            <div class="swatch" style="background:#9ece6a"></div>
+          </div>
+          <span style="font-size:10px;color:var(--muted)">Tokyo Night</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+          <div style="display:flex;gap:3px">
+            <div class="swatch" style="background:#282a36"></div>
+            <div class="swatch" style="background:#ff79c6"></div>
+            <div class="swatch" style="background:#50fa7b"></div>
+            <div class="swatch" style="background:#f1fa8c"></div>
+          </div>
+          <span style="font-size:10px;color:var(--muted)">Dracula</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+          <div style="display:flex;gap:3px">
+            <div class="swatch" style="background:#0d1117"></div>
+            <div class="swatch" style="background:#58a6ff"></div>
+            <div class="swatch" style="background:#3fb950"></div>
+            <div class="swatch" style="background:#f78166"></div>
+          </div>
+          <span style="font-size:10px;color:var(--muted)">GitHub Dark</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+          <div style="display:flex;gap:3px">
+            <div class="swatch" style="background:#1e1e2e"></div>
+            <div class="swatch" style="background:#cba6f7"></div>
+            <div class="swatch" style="background:#a6e3a1"></div>
+            <div class="swatch" style="background:#fab387"></div>
+          </div>
+          <span style="font-size:10px;color:var(--muted)">Catppuccin</span>
+        </div>
+      </div>
+      <div class="step-desc" style="padding-top:0">Also add <span style="color:var(--green)">lsd</span> (a colourful <code style="color:var(--cyan)">ls</code> replacement) and <span style="color:var(--green)">bat</span> (colourful <code style="color:var(--cyan)">cat</code>):</div>
+      <div class="code-block">
+        <div class="code-header"><span>colourful tools</span><button class="copy-btn" onclick="copy(this,'brew install lsd bat\n# Add to ~/.zshrc:\nalias ls=&quot;lsd&quot;\nalias cat=&quot;bat&quot;')">Copy</button></div>
+        <div class="code-body"><span class="fn">brew install</span> lsd bat
+
+<span class="cm"># Add to ~/.zshrc</span>
+<span class="kw">alias</span> <span class="va">ls</span>=<span class="str">"lsd"</span>
+<span class="kw">alias</span> <span class="va">cat</span>=<span class="str">"bat"</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="info-box" style="margin-top:32px; font-size:12px; line-height:2;">
+    ✦ After all steps: run <span style="color:var(--text)">source ~/.zshrc</span> to reload, then <span style="color:var(--text)">p10k configure</span> to fine-tune your prompt.<br>
+    ✦ Visit <span style="color:var(--cyan)">iterm2colorschemes.com</span> for 250+ colour schemes to browse and download.
+  </div>
+
+</div>
+
+<script>
+  // Backend-driven configuration
+  let pluginText = '';
+  let p10kText = '';
+  let fontText = '';
+
+  // Fetch config from backend on page load
+  async function loadConfig() {
+    try {
+      const response = await fetch('/api/config');
+      const config = await response.json();
+      
+      pluginText = config.pluginText;
+      p10kText = config.p10kText;
+      fontText = config.fontText;
+    } catch (error) {
+      console.error('Failed to load config from backend, using fallback:', error);
+      // Fallback values if backend is not available
+      pluginText = `git clone https://github.com/zsh-users/zsh-syntax-highlighting \\\n  \${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting\ngit clone https://github.com/zsh-users/zsh-autosuggestions \\\n  \${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions`;
+      p10kText = `git clone --depth=1 https://github.com/romkatv/powerlevel10k.git \\\n  \${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k`;
+      fontText = `brew tap homebrew/cask-fonts\nbrew install --cask font-meslo-lg-nerd-font`;
+    }
+  }
+
+  function toggle(el) {
+    el.classList.toggle('open');
+  }
+
+  function copy(btn, text) {
+    const resolvedText = typeof text === 'string' ? text : text;
+    navigator.clipboard.writeText(resolvedText).then(() => {
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = 'Copy';
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+    event.stopPropagation();
+  }
+
+  // Load config and open first step on page load
+  loadConfig().then(() => {
+    document.querySelector('.step').classList.add('open');
+  });
+</script>
+</body>
+</html>
